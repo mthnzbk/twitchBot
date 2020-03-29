@@ -7,12 +7,14 @@ class TwitchBot(QTcpSocket):
     SERVER = "irc.chat.twitch.tv"
     PORT = 6667
     BOT_NAME = "mthnzbkBot"
-    PASSWORD = "oauth:i5pyfkzugeuma7i9h43pmcb9zbx8xo"
-    CHANNELS = {"macabreartgames": {"ready": False, "first_msg_list": []},
-                "mthnzbk": {"ready": False, "first_msg_list": []},
-                "wildgenie": {"ready": False, "first_msg_list": []}}
-    first_msg_list = []
-    ready = False
+    PASSWORD = "oauth:47abc39v1xyflk35cm8wly2ek8fn01"
+    CHANNELS = {"macabreartgames": {"ready": False, "first_msg_list": ["macabreartgames", "streamelements"]},
+                #"benceemerik": {"ready": False, "first_msg_list": ["benceemerik", "streamelements", "streamlabs", "nightbot"]},
+                #"wildgenie": {"ready": False, "first_msg_list": ["wildgenie", "wildgeniebot", "streamelements",
+                                                                 #"streamlabs"]},
+                #"randomman_eq": {"ready": False, "first_msg_list": ["randomman_eq"]}
+    }
+
 
     def __init__(self):
         super().__init__()
@@ -28,14 +30,14 @@ class TwitchBot(QTcpSocket):
         self.bytesWritten.connect(self.writeBytes)
 
         if self.waitForConnected(5000):
-            s = f"PASS {self.PASSWORD} \r\n"
-            self.writeData(s, len(s))
-            s = f"NICK {self.BOT_NAME} \r\n"
-            self.writeData(s, len(s))
+            self.write(bytes(f"PASS {self.PASSWORD} \r\n", "utf-8"))
+            self.write(bytes(f"NICK {self.BOT_NAME} \r\n", "utf-8"))
+            # self.write(bytes("CAP REQ :twitch.tv/membership\r\n", "utf-8"))
+            # self.write(bytes("CAP REQ :twitch.tv/tags\r\n", "utf-8"))
+            # self.write(bytes("CAP REQ :twitch.tv/commands\r\n", "utf-8"))
             for channel in self.CHANNELS.keys():
                 print(channel)
-                s = f"JOIN #{channel} \r\n"
-                self.writeData(s, len(s))
+                self.write(bytes(f"JOIN #{channel} \r\n", "utf-8"))
 
 
     def connectServer(self):
@@ -64,7 +66,7 @@ class TwitchBot(QTcpSocket):
         pass#print(wb)
 
     def readServer(self):
-        data = str(self.read(1024), encoding="utf-8")
+        data = str(self.read(1024), "utf-8")
         print(data)
         if "End of /NAMES list" in data:
             ch = data.split("\r\n")[-2].split(" ")[3][1:]
@@ -78,6 +80,7 @@ class TwitchBot(QTcpSocket):
         if "PRIVMSG" in data:
             ch = data.split(" ")[2][1:]
             name = data.split("!")[0][1:]
+            print(name)
 
             if not name in self.CHANNELS[ch]["first_msg_list"]:
                 self.firstMsgControl(data)
@@ -97,9 +100,10 @@ class TwitchBot(QTcpSocket):
 
 
     def sendMessage(self, channel, message):
-        s = bytes(f"PRIVMSG #{channel} :{message} \r\n", encoding="utf-8")
+        s = bytes(f"PRIVMSG #{channel} :{message} \r\n", "utf-8")
         self.write(s)
         print(s)
+
 
 app = QCoreApplication([])
 bot = TwitchBot()
